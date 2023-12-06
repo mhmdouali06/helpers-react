@@ -1,0 +1,72 @@
+import React, {useEffect, useRef, useState} from 'react'
+import usePlacesService from 'react-google-autocomplete/lib/usePlacesAutocompleteService'
+
+const Autocomplete = () => {
+  const [selectedPlace, setSelectedPlace] = useState({lat: null, lng: null})
+  const inputRef = useRef<any>()
+  // console.log(selectedPlace);
+
+  const {placesService, placePredictions, getPlacePredictions} = usePlacesService({
+    apiKey: process.env.REACT_APP_KEY_GOOGLE_MAP,
+  })
+
+  const savePlaceDetailsToState = (placeDetails) => {
+    setSelectedPlace({
+      lat: placeDetails.geometry.location.lat(),
+      lng: placeDetails.geometry.location.lng(),
+    })
+  }
+
+  useEffect(() => {
+    // Fetch place details for the first element in placePredictions array
+    if (placesService && placePredictions.length) {
+      placesService.getDetails(
+        {
+          placeId: placePredictions[0].place_id,
+        },
+        (placeDetails) => savePlaceDetailsToState(placeDetails)
+      )
+    }
+  }, [placePredictions, placesService])
+
+  const onOriginSelect = (item) => {
+    if (placesService) {
+      inputRef.current.value = item.description
+      placesService.getDetails(
+        {
+          placeId: item.place_id,
+        },
+        (placeDetails) => savePlaceDetailsToState(placeDetails)
+      )
+    }
+  }
+
+  return (
+    <>
+      <input
+        /// <reference path="" />
+        ref={inputRef}
+        placeholder='Debounce 500 ms'
+        className='form-control'
+        onChange={(evt) => {
+          getPlacePredictions({input: evt.target.value})
+        }}
+        // loading={isPlacePredictionsLoading}
+      />
+      <ul className='list-group'>
+        {placePredictions.map((item: any, index) => (
+          <li
+            key={index}
+            style={{cursor: 'pointer'}}
+            onClick={() => onOriginSelect(item)}
+            className='list-group-item'
+          >
+            {item.description}
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}
+
+export default Autocomplete
